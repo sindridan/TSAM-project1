@@ -165,10 +165,11 @@ void clientCommand(int clientSocket, fd_set *openSockets, int *maxfds,
   // This assumes that the supplied command has no parameters
   if((tokens[0].compare("SYS") == 0) && (tokens.size() >= 2))
   {
-    //system(tokens[1].c_str());
-    FILE *fp, *outputfile;
+    FILE *fp;
     char var[128];
     std::string result = "";
+
+    //If system commands are more than 1, e.g. makedir <dir>
     std::string tokensTogether = "";
     for (int i = 1; i < tokens.size(); i++) {
         tokensTogether += tokens[i] + " ";
@@ -177,19 +178,16 @@ void clientCommand(int clientSocket, fd_set *openSockets, int *maxfds,
     fp = popen(tokensTogether.c_str(), "r");
     while(fgets(var, sizeof(var), fp) != NULL) {
         printf("%s", var);
-        result += var;
+        result += var; //Append output to be sent to client
     }
     pclose(fp);
-    outputfile = fopen("res.txt", "a");
-    fprintf(outputfile, "%s\n", var);
-    fclose(outputfile);
 
+    //In case that there is no output from the SYS command 
     if(result == "") {
         send(clientSocket, std::string(buffer).c_str(), std::string(buffer).size(), 0);
     } else {
         send(clientSocket, result.c_str(), result.size(), 0);
     }
-    
   }
   else
   {
