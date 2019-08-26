@@ -7,6 +7,11 @@
 //
 // Author: Jacky Mallett (jacky@ru.is)
 //
+
+/*
+Code referenced:
+https://pubs.opengroup.org/onlinepubs/009695399/functions/popen.html
+*/
 #include <stdio.h>
 #include <errno.h>
 #include <stdlib.h>
@@ -166,15 +171,20 @@ void clientCommand(int clientSocket, fd_set *openSockets, int *maxfds,
   if((tokens[0].compare("SYS") == 0) && (tokens.size() >= 2))
   {
     FILE *fp;
-    char var[128];
+    char var[4098];
     std::string result = "";
 
     //If system commands are more than 1, e.g. makedir <dir>
     std::string tokensTogether = "";
     for (int i = 1; i < tokens.size(); i++) {
-        tokensTogether += tokens[i] + " ";
+        if(i == tokens.size() -1) {
+            tokensTogether += tokens[i];
+        }
+        else {
+          tokensTogether += tokens[i] + " ";  
+        }
+        
     }
-    std::cout << tokensTogether << std::endl;
     fp = popen(tokensTogether.c_str(), "r");
     while(fgets(var, sizeof(var), fp) != NULL) {
         printf("%s", var);
@@ -186,12 +196,15 @@ void clientCommand(int clientSocket, fd_set *openSockets, int *maxfds,
     if(result == "") {
         send(clientSocket, std::string(buffer).c_str(), std::string(buffer).size(), 0);
     } else {
+        //Output from system command sent to client
         send(clientSocket, result.c_str(), result.size(), 0);
     }
   }
   else
   {
-      std::cout << "Unknown command from client:" << buffer << std::endl;
+      std::string unknownCommand = "Unknown command from client: " + std::string(buffer);
+      std::cout << unknownCommand << std::endl;
+      send(clientSocket, unknownCommand.c_str(), unknownCommand.size(), 0);
   }
 }
 
